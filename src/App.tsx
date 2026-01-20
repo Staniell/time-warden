@@ -17,7 +17,7 @@ function App() {
             <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
               <span className="text-white font-bold">W</span>
             </div>
-            <span className="font-semibold text-lg tracking-tight">Time Warden</span>
+            <span className="font-semibold text-lg tracking-tight">Timewarden</span>
           </div>
           <div className="flex gap-6 text-sm font-medium text-slate-400">
             <span className="text-indigo-400 cursor-default">Dashboard</span>

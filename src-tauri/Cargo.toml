@@ -1,5 +1,5 @@
 [package]
-name = "time-warden"
+name = "timewarden"
 version = "0.1.0"
 description = "Time Warden desktop app"
 authors = ["you"]
