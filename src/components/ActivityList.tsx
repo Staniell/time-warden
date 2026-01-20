@@ -1,4 +1,4 @@
-import { cn } from "../lib/utils";
+import { cn, cleanAppName } from "../lib/utils";
 import { Clock } from "lucide-react";
 
 // Matches the Rust Session struct
@@ -33,7 +33,12 @@ export function ActivityList({ sessions, className }: ActivityListProps) {
   }
 
   return (
-    <div className={cn("space-y-1 bg-zinc-900/30 rounded-xl p-2 border border-zinc-800/50", className)}>
+    <div
+      className={cn(
+        "space-y-1 bg-zinc-900/30 rounded-xl p-2 border border-zinc-800/50 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar",
+        className,
+      )}
+    >
       {sessions.map((session) => (
         <div
           key={session.id}
@@ -42,7 +47,9 @@ export function ActivityList({ sessions, className }: ActivityListProps) {
           <div className="flex items-center gap-3">
             <div className={cn("w-2 h-2 rounded-full", session.is_idle ? "bg-amber-500/50" : "bg-indigo-500/50")} />
             <div>
-              <div className="text-sm font-medium text-zinc-200">{session.app_name || session.app_id}</div>
+              <div className="text-sm font-medium text-zinc-200">
+                {cleanAppName(session.app_name || session.app_id)}
+              </div>
               <div className="text-xs text-zinc-500 font-mono">
                 {new Date(session.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </div>

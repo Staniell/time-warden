@@ -1,5 +1,5 @@
 import { Activity, Pause } from "lucide-react";
-import { cn } from "../lib/utils";
+import { cn, cleanAppName } from "../lib/utils";
 
 interface StatusIndicatorProps {
   currentApp?: string;
@@ -45,7 +45,7 @@ export function StatusIndicator({ currentApp, isIdle, className }: StatusIndicat
     >
       <Activity className="w-3.5 h-3.5 animate-pulse" />
       <span className="text-xs font-medium">
-        Tracking: <span className="font-bold">{currentApp}</span>
+        Tracking: <span className="font-bold">{cleanAppName(currentApp)}</span>
       </span>
     </div>
   );

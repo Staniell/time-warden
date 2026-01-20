@@ -5,6 +5,8 @@ import { StatsCard } from "./components/StatsCard";
 import { StatusIndicator } from "./components/StatusIndicator";
 import { ActivityList } from "./components/ActivityList";
 import { UsageChart } from "./components/UsageChart";
+import { TitleBar } from "./components/TitleBar";
+import { cleanAppName } from "./lib/utils";
 
 interface Session {
   id: number;
@@ -70,12 +72,12 @@ function App() {
     return `${m}m` || "0m";
   };
 
-  const activeApp = sessions.length > 0 ? sessions.find((s) => !s.is_idle)?.app_name : "None";
-
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-indigo-500/30">
-      {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 h-16 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800/50 z-50">
+      <TitleBar />
+
+      {/* Navbar - Pushed down by TitleBar (h-8 = 2rem) */}
+      <nav className="fixed top-8 left-0 right-0 h-16 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800/50 z-40">
         <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-indigo-600 rounded-lg shadow-lg shadow-indigo-500/20">
@@ -96,8 +98,8 @@ function App() {
         </div>
       </nav>
 
-      {/* Main Content */}
-      <main className="pt-24 pb-12 px-6 max-w-7xl mx-auto">
+      {/* Main Content - Added padding top to account for TitleBar + Navbar (2rem + 4rem = 6rem, so pt-24 is 6rem. Wait, pt-24 is 6rem. pt-32 is 8rem. We need 2rem + 4rem + spacing. 6rem start. Previous was pt-24=6rem. Now we have extra 2rem top. So pt-32 might be better or keeping pt-24 but adding mt-8.) */}
+      <main className="pt-32 pb-12 px-6 max-w-7xl mx-auto">
         <div className="grid grid-cols-12 gap-8">
           {/* Header */}
           <div className="col-span-12 mb-4">
@@ -115,7 +117,7 @@ function App() {
             />
             <StatsCard
               title="Most Used"
-              value={appUsage.length > 0 ? appUsage[0].name : "N/A"}
+              value={appUsage.length > 0 ? cleanAppName(appUsage[0].name) : "N/A"}
               icon={Activity}
               description={appUsage.length > 0 ? formatDuration(appUsage[0].seconds) : undefined}
             />

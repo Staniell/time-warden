@@ -1,5 +1,5 @@
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
-import { cn } from "../lib/utils";
+import { cn, cleanAppName } from "../lib/utils";
 
 interface AppUsage {
   name: string;
@@ -15,6 +15,7 @@ export function UsageChart({ data, className }: UsageChartProps) {
   // Take top 5 apps
   const chartData = data.slice(0, 5).map((item) => ({
     ...item,
+    name: cleanAppName(item.name),
     minutes: Math.round(item.seconds / 60),
   }));
 
@@ -32,7 +33,12 @@ export function UsageChart({ data, className }: UsageChartProps) {
   }
 
   return (
-    <div className={cn("h-[300px] w-full bg-zinc-900/30 rounded-xl p-4 border border-zinc-800/50", className)}>
+    <div
+      className={cn(
+        "h-[300px] w-full bg-zinc-900/30 rounded-xl p-4 border border-zinc-800/50 overflow-hidden",
+        className,
+      )}
+    >
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 30, left: 10, bottom: 0 }}>
           <XAxis type="number" hide />
@@ -53,7 +59,7 @@ export function UsageChart({ data, className }: UsageChartProps) {
               color: "#e4e4e7",
             }}
             itemStyle={{ color: "#a5b4fc" }}
-            formatter={(value: number) => [`${value} mins`, "Time"]}
+            formatter={(value: number | undefined) => [`${value || 0} mins`, "Time"]}
           />
           <Bar dataKey="minutes" radius={[0, 4, 4, 0]}>
             {chartData.map((_, index) => (
