@@ -1,0 +1,11 @@
+/* Main reset and global styles handled by index.css and Tailwind v4 core */
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body {
+    @apply h-full overflow-x-hidden;
+  }
+}
