@@ -1,81 +1,157 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { Activity, Clock, LayoutDashboard, Settings, Shield, Timer } from "lucide-react";
+import { StatsCard } from "./components/StatsCard";
+import { StatusIndicator } from "./components/StatusIndicator";
+import { ActivityList } from "./components/ActivityList";
+import { UsageChart } from "./components/UsageChart";
+
+interface Session {
+  id: number;
+  app_id: string;
+  app_name?: string;
+  start_time: string;
+  end_time?: string;
+  duration_seconds?: number;
+  is_idle: boolean;
+}
+
+interface AppUsage {
+  name: string;
+  seconds: number;
+}
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const [currentApp, setCurrentApp] = useState<string | null>(null);
+  const [idleSeconds, setIdleSeconds] = useState<number>(0);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [appUsage, setAppUsage] = useState<AppUsage[]>([]);
+  const [totalTime, setTotalTime] = useState<number>(0);
 
-  async function greet() {
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  const fetchData = async () => {
+    try {
+      // Live status
+      const app = await invoke<string | null>("get_current_app");
+      const idle = await invoke<number>("get_idle_seconds");
+
+      setCurrentApp(app);
+      setIdleSeconds(idle);
+
+      // Dashboard data
+      const todaySessions = await invoke<Session[]>("get_today_sessions");
+      const usage = await invoke<[string, number][]>("get_app_totals_today");
+
+      setSessions(todaySessions.reverse()); // Most recent first
+
+      const usageData = usage.map(([name, seconds]) => ({ name, seconds }));
+      setAppUsage(usageData);
+
+      const total = usageData.reduce((acc, curr) => acc + curr.seconds, 0);
+      setTotalTime(total);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+    }
+  };
+
+  useEffect(() => {
+    // Initial fetch
+    fetchData();
+
+    // Poll every 1 second
+    const interval = setInterval(fetchData, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatDuration = (seconds: number): string => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m` || "0m";
+  };
+
+  const activeApp = sessions.length > 0 ? sessions.find((s) => !s.is_idle)?.app_name : "None";
 
   return (
-    <div className="min-h-screen bg-[#0f1117] text-slate-200 font-sans selection:bg-indigo-500/30">
-      <nav className="border-b border-slate-800/60 bg-[#0f1117]/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-indigo-500/30">
+      {/* Navbar */}
+      <nav className="fixed top-0 left-0 right-0 h-16 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800/50 z-50">
+        <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <span className="text-white font-bold">W</span>
+            <div className="p-2 bg-indigo-600 rounded-lg shadow-lg shadow-indigo-500/20">
+              <Shield className="w-5 h-5 text-white" />
             </div>
-            <span className="font-semibold text-lg tracking-tight">Timewarden</span>
+            <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
+              Timewarden
+            </span>
           </div>
-          <div className="flex gap-6 text-sm font-medium text-slate-400">
-            <span className="text-indigo-400 cursor-default">Dashboard</span>
-            <span className="hover:text-slate-200 transition-colors cursor-pointer">Schedules</span>
-            <span className="hover:text-slate-200 transition-colors cursor-pointer">Reports</span>
+
+          <div className="flex items-center gap-6">
+            <StatusIndicator
+              currentApp={currentApp || undefined}
+              isIdle={idleSeconds > 300} // Hardcoded 5 min threshold for UI
+            />
+            <Settings className="w-5 h-5 text-zinc-400 hover:text-white cursor-pointer transition-colors" />
           </div>
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto px-6 py-12">
-        <div className="relative group mb-12">
-          <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl blur opacity-15 group-hover:opacity-25 transition duration-1000 group-hover:duration-200"></div>
-          <div className="relative bg-[#161922] border border-slate-800/60 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="space-y-4">
-              <h1 className="text-4xl font-bold text-white tracking-tight">
-                Guardian of your{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
-                  focus.
-                </span>
-              </h1>
-              <p className="text-slate-400 max-w-md leading-relaxed">
-                Time Warden is initialized and ready to track your digital sessions with zero overhead.
-              </p>
-            </div>
+      {/* Main Content */}
+      <main className="pt-24 pb-12 px-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-12 gap-8">
+          {/* Header */}
+          <div className="col-span-12 mb-4">
+            <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+            <p className="text-zinc-400">Overview of your activity today</p>
+          </div>
 
-            <form
-              className="flex flex-col gap-3 w-full max-w-sm"
-              onSubmit={(e) => {
-                e.preventDefault();
-                greet();
-              }}
-            >
-              <div className="relative">
-                <input
-                  id="greet-input"
-                  className="w-full bg-[#1c212c] border border-slate-700/50 rounded-xl px-4 py-3 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all"
-                  onChange={(e) => setName(e.currentTarget.value)}
-                  placeholder="App Status Check..."
-                />
+          {/* Stats Cards */}
+          <div className="col-span-12 grid grid-cols-3 gap-6">
+            <StatsCard
+              title="Total Time"
+              value={formatDuration(totalTime)}
+              icon={Timer}
+              description="Active screen time today"
+            />
+            <StatsCard
+              title="Most Used"
+              value={appUsage.length > 0 ? appUsage[0].name : "N/A"}
+              icon={Activity}
+              description={appUsage.length > 0 ? formatDuration(appUsage[0].seconds) : undefined}
+            />
+            <StatsCard
+              title="Productivity"
+              value="85%"
+              icon={LayoutDashboard}
+              description="Based on app categories"
+              trend={{ value: 12, isPositive: true }}
+            />
+          </div>
+
+          {/* Charts Area */}
+          <div className="col-span-8 space-y-6">
+            <div className="bg-zinc-900/40 rounded-2xl p-6 border border-zinc-800/50 backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-indigo-500" />
+                  Top Applications
+                </h2>
               </div>
-              <button
-                type="submit"
-                className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-indigo-600/20 active:scale-[0.98] transition-all"
-              >
-                Verify Core Bridge
-              </button>
-            </form>
+              <UsageChart data={appUsage} />
+            </div>
+          </div>
+
+          {/* Activity Feed */}
+          <div className="col-span-4">
+            <div className="bg-zinc-900/40 rounded-2xl p-6 border border-zinc-800/50 backdrop-blur-sm h-full">
+              <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-emerald-500" />
+                Recent Activity
+              </h2>
+              <ActivityList sessions={sessions.slice(0, 10)} />
+            </div>
           </div>
         </div>
-
-        {greetMsg && (
-          <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-            <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4 flex items-center gap-3 text-indigo-300">
-              <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
-              {greetMsg}
-            </div>
-          </div>
-        )}
       </main>
     </div>
   );
