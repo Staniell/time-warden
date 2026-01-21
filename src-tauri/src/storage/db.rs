@@ -1,4 +1,4 @@
-use rusqlite::{Connection, Result as SqliteResult};
+use rusqlite::Connection;
 use std::path::PathBuf;
 use thiserror::Error;
 

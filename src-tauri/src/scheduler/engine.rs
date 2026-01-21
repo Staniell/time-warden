@@ -1,5 +1,5 @@
 use crate::models::Schedule;
-use chrono::{Datelike, Local, NaiveTime, Weekday};
+use chrono::{Datelike, Local};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;

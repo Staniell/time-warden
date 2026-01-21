@@ -4,7 +4,7 @@ pub mod scheduler;
 pub mod sessionizer;
 pub mod storage;
 
-use tauri::Manager;
+use tauri::{Manager, WebviewWindow};
 use tauri_plugin_notification::NotificationExt;
 
 use std::path::PathBuf;
@@ -243,9 +243,10 @@ pub fn run() {
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
                 .show_menu_on_left_click(true)
-                .on_menu_event(|app, event| match event.id.as_ref() {
+                .on_menu_event(|app: &tauri::AppHandle, event: tauri::menu::MenuEvent| match event.id.as_ref() {
                     "show" => {
                         if let Some(window) = app.get_webview_window("main") {
+                            let window: WebviewWindow = window;
                             let _ = window.show();
                             let _ = window.set_focus();
                         }
@@ -255,12 +256,13 @@ pub fn run() {
                     }
                     _ => {}
                 })
-                .on_tray_icon_event(|tray, event| match event {
+                .on_tray_icon_event(|tray: &tauri::tray::TrayIcon, event: tauri::tray::TrayIconEvent| match event {
                     tauri::tray::TrayIconEvent::Click {
                         button: tauri::tray::MouseButton::Left,
                         ..
                     } => {
                         if let Some(window) = tray.app_handle().get_webview_window("main") {
+                            let window: WebviewWindow = window;
                             let _ = window.show();
                             let _ = window.set_focus();
                         }
